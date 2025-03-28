@@ -17,7 +17,6 @@ import { NotesContext } from "../../context/NotesContext";
 const NotesList = () => {
   const {
     setCurrentNote,
-    showTempNote,
     setNotes,
     filteredNotes,
     currentNote,
@@ -31,8 +30,13 @@ const NotesList = () => {
 
   const { currentUser } = useContext(AuthContext);
 
-  const { setShowNotesList, showNotesList, setShowSidebar, setShowTempNote } =
-    useContext(UIContext);
+  const {
+    setShowNotesList,
+    showNotesList,
+    setShowSidebar,
+    setShowTempNote,
+    showTempNote,
+  } = useContext(UIContext);
 
   const fetchNotes = useCallback(async () => {
     if (!currentUser) return;

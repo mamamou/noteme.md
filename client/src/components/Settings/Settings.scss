@@ -68,7 +68,8 @@
           border-radius: 50%;
           height: 50px;
           width: 50px;
-          outline: 1px solid rgb(46, 0, 46);
+          outline: 1px solid rgba(46, 0, 46, 0.4);
+          background-color: rgba(46, 0, 46, 0.4);
           outline-offset: 2px;
         }
       }

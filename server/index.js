@@ -16,6 +16,8 @@ const PORT = process.env.PORT || 3001;
 
 const app = express();
 
+// prod cors cfg
+
 app.use(
   cors({
     origin: "https://noteme-md.vercel.app",
@@ -23,6 +25,7 @@ app.use(
   })
 );
 
+// dev cors cfg
 // app.use(cors());
 
 app.use(bodyParser.json());
