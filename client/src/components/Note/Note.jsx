@@ -313,19 +313,28 @@ const Note = () => {
   };
 
   return (
-    <div className="Note">
+    <div
+      className="Note"
+      onClick={() => {
+        setShowNotesList(false);
+        setShowSidebar(false);
+        setWritingToolsMode(false);
+      }}
+    >
       <div className="toolbar">
         <div className="actions">
           <ChevronLeft
             className="icon back"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setShowSidebar((showSidebar) => !showSidebar);
               setShowNotesList(false);
             }}
           />
           <List
             className="icon list"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setShowNotesList((showNotesList) => !showNotesList);
               setShowSidebar(false);
             }}
