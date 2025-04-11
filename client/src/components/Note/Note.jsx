@@ -32,7 +32,7 @@ import { UIContext } from "../../context/UIContext";
 import { NotesContext } from "../../context/NotesContext";
 import { WritingToolsContext } from "../../context/WritingToolsContext";
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const geminiApiKey = "AIzaSyBM4VjictreZGjd4NplDnb06ETrImsAKxU";
+const geminiApiKey = process.env.REACT_APP_GEMINI_API_KEY;
 
 const Note = () => {
   const { currentUser } = useContext(AuthContext);

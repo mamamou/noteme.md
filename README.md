@@ -36,6 +36,11 @@ cd client
 npm install
 npm start
 ```
+
+### Create envrionment variables
+
+Refer to `.env.example` in `server` and `client`
+
 ### Start server
 
 ```bash
