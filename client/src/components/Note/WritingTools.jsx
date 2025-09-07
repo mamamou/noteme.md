@@ -33,6 +33,7 @@ import "prismjs/components/prism-python";
 import { marked } from "marked";
 import { NotesContext } from "../../context/NotesContext";
 import { WritingToolsContext } from "../../context/WritingToolsContext";
+import { motion } from "framer-motion";
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const geminiApiKey = process.env.REACT_APP_GEMINI_API_KEY;
@@ -224,7 +225,14 @@ const WritingTools = () => {
   const renderedMarkdown = marked.parse(result, { gfm: true, breaks: true });
 
   return (
-    <div className="writing-tools" onClick={(e) => e.stopPropagation()}>
+    <motion.div
+      className="writing-tools"
+      onClick={(e) => e.stopPropagation()}
+      initial={{ opacity: 0, y: "2rem" }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: "2rem" }}
+      transition={{ duration: 0.2 }}
+    >
       <div className="writingToolsContainer">
         <h2>Writing Tools</h2>
 
@@ -358,7 +366,7 @@ const WritingTools = () => {
           <FontAwesomeIcon icon={faClose} />
         </button> */}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

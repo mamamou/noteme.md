@@ -31,6 +31,7 @@ import API_BASE_URL from "../../config";
 import { UIContext } from "../../context/UIContext";
 import { NotesContext } from "../../context/NotesContext";
 import { WritingToolsContext } from "../../context/WritingToolsContext";
+import { AnimatePresence } from "framer-motion";
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const geminiApiKey = process.env.REACT_APP_GEMINI_API_KEY;
 
@@ -435,7 +436,7 @@ const Note = () => {
           }}
         ></div>
       )}
-      {writingToolsMode && <WritingTools />}
+      <AnimatePresence>{writingToolsMode && <WritingTools />}</AnimatePresence>
     </div>
   );
 };
