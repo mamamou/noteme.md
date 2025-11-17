@@ -36,7 +36,9 @@ import { WritingToolsContext } from "../../context/WritingToolsContext";
 import { motion } from "framer-motion";
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+
 const geminiApiKey = process.env.REACT_APP_GEMINI_API_KEY;
+
 const WritingTools = () => {
   const [messageMood, setMessageMood] = useState("");
   const [messageType, setMessageType] = useState("");
@@ -108,7 +110,7 @@ const WritingTools = () => {
 
   const genAI = new GoogleGenerativeAI(geminiApiKey);
 
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   const chat = model.startChat({
     history: chatHistory,
     generationConfig: {
@@ -146,7 +148,10 @@ const WritingTools = () => {
       } catch (error) {
         console.log(error);
         setLoading(false);
-        setResultGlobal(error);
+        const errorMessage = `**Error:** ${error.message || error.toString()}\n\nPlease check your API key and try again.`;
+        setResult(errorMessage);
+        setResultGlobal(errorMessage);
+        return;
       }
       appendToChatHistory("model", text);
       if (msg.trim() !== "") {
@@ -158,11 +163,13 @@ const WritingTools = () => {
     } catch (error) {
       setLoading(false);
       console.error(error);
-      setResult(error);
-      setResultGlobal(error);
+      const errorMessage = `**Error:** ${error.message || error.toString()}\n\nPlease check your API key and try again.`;
+      setResult(errorMessage);
+      setResultGlobal(errorMessage);
     }
     msg = "";
   };
+
 
   const handleAppendToContent = () => {
     setContent(`${content}${result}`);
@@ -222,7 +229,9 @@ const WritingTools = () => {
       });
     };
   }, []);
-  const renderedMarkdown = marked.parse(result, { gfm: true, breaks: true });
+  const renderedMarkdown = result && typeof result === 'string'
+    ? marked.parse(result, { gfm: true, breaks: true })
+    : '<p>No result yet. Try generating content first.</p>';
 
   return (
     <motion.div
@@ -315,6 +324,7 @@ const WritingTools = () => {
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
+
         {result && (
           <div className="resultContainer" ref={resultRef}>
             <div className="resultContainer--buttons">

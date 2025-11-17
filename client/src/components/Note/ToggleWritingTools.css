@@ -296,3 +296,27 @@
     transform: translate(60px, -32px) translateZ(0);
   }
 }
+
+/* Document Assistant Toggle Button */
+.btn--toggle-document-assistant {
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.btn--toggle-document-assistant:hover {
+  background: rgba(106, 82, 143, 0.1);
+}
+
+.btn--toggle-document-assistant .icon {
+  transition: all 0.3s ease;
+}
+
+.btn--toggle-document-assistant .icon.active {
+  color: var(--primary-color);
+  transform: scale(1.1);
+}

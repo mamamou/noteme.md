@@ -12,6 +12,8 @@ import {
   Heart,
   List,
   Search,
+  BookOpen,
+  Download,
 } from "react-feather";
 import { Sparkles } from "lucide-react";
 
@@ -20,17 +22,20 @@ import "./ToggleWritingTools.css";
 import { toast } from "react-toastify";
 import { marked } from "marked";
 import Prism from "prismjs";
+import html2pdf from "html2pdf.js";
 import "prismjs/themes/prism-funky.css";
 import "prismjs/components/prism-javascript";
 import "prismjs/components/prism-python";
 import WritingTools from "./WritingTools";
 import "./WritingTools.scss";
+import DocumentAssistant from "../DocumentAssistant/DocumentAssistant";
 import axios from "axios";
 import SpinLoader from "../SpinLoader/SpinLoader";
 import API_BASE_URL from "../../config";
 import { UIContext } from "../../context/UIContext";
 import { NotesContext } from "../../context/NotesContext";
 import { WritingToolsContext } from "../../context/WritingToolsContext";
+import { highlightAISections } from "../../utils/sectionMarkers";
 import { AnimatePresence } from "framer-motion";
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const geminiApiKey = process.env.REACT_APP_GEMINI_API_KEY;
@@ -61,6 +66,7 @@ const Note = () => {
     useContext(WritingToolsContext);
   const GEMINI_INSTRUCTIONS_PROMPT = `Return formatted text by converting it to markdown`;
   const [loading, setLoading] = useState(false);
+  const [documentAssistantOpen, setDocumentAssistantOpen] = useState(false);
 
   const [isFavorite, setIsFavorite] = useState(
     currentNote?.status === "favorite"
@@ -232,7 +238,9 @@ const Note = () => {
       setContent(defaultContent);
     }
     if (viewMode === "preview") {
-      const html = marked.parse(content, { breaks: true, gfm: true });
+      // Highlight AI-generated sections before parsing markdown
+      const highlightedContent = highlightAISections(content);
+      const html = marked.parse(highlightedContent, { breaks: true, gfm: true });
 
       return <div id="preview" dangerouslySetInnerHTML={{ __html: html }} />;
     }
@@ -295,7 +303,7 @@ const Note = () => {
   }
   const genAI = new GoogleGenerativeAI(geminiApiKey);
 
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
   const chat = model.startChat({
     history: chatHistory,
     generationConfig: {
@@ -332,6 +340,97 @@ const Note = () => {
       toast.error("failed to refactor PDF :(");
     }
     msg = "";
+  };
+
+  const handleExportToPDF = async () => {
+    if (!content.trim()) {
+      toast.error("No content to export");
+      return;
+    }
+
+    try {
+      toast.info("Generating PDF...");
+
+      // Get the note title for the filename
+      const firstLine = content.split("\n")[0] || "Untitled";
+      const title = firstLine.startsWith("#")
+        ? firstLine.substring(1).trim()
+        : firstLine.trim();
+      const filename = `${title.substring(0, 50)}.pdf`;
+
+      // Create a temporary container for rendering
+      const tempContainer = document.createElement("div");
+      tempContainer.style.position = "fixed";
+      tempContainer.style.top = "0";
+      tempContainer.style.left = "0";
+      tempContainer.style.width = "210mm"; // Full A4 width
+      tempContainer.style.maxWidth = "210mm";
+      tempContainer.style.padding = "0"; // No padding, margins will be in PDF
+      tempContainer.style.boxSizing = "border-box";
+      tempContainer.style.backgroundColor = "white";
+      tempContainer.style.fontFamily = "Arial, sans-serif";
+      tempContainer.style.fontSize = "12pt";
+      tempContainer.style.lineHeight = "1.6";
+      tempContainer.style.color = "#000000";
+      tempContainer.style.zIndex = "-9999";
+      tempContainer.style.opacity = "0";
+      tempContainer.style.pointerEvents = "none";
+
+      // Render markdown to HTML
+      const highlightedContent = highlightAISections(content);
+      const html = marked.parse(highlightedContent, { breaks: true, gfm: true });
+      tempContainer.innerHTML = html;
+
+      document.body.appendChild(tempContainer);
+
+      // Apply syntax highlighting if there's code
+      Prism.highlightAllUnder(tempContainer);
+
+      // Small delay to ensure rendering
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Configure html2pdf options
+      const opt = {
+        margin: [20, 20, 20, 20], // top, right, bottom, left in mm
+        filename: filename,
+        image: { type: "jpeg", quality: 0.95 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          letterRendering: true,
+          backgroundColor: "#ffffff",
+          logging: false
+        },
+        jsPDF: {
+          unit: "mm",
+          format: "a4",
+          orientation: "portrait"
+        },
+        pagebreak: {
+          mode: ["avoid-all", "css", "legacy"],
+          before: ".page-break-before",
+          after: ".page-break-after",
+          avoid: "img"
+        }
+      };
+
+      // Generate PDF
+      await html2pdf().set(opt).from(tempContainer).save();
+
+      // Remove temporary container
+      document.body.removeChild(tempContainer);
+
+      toast.success("PDF exported successfully!");
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      toast.error("Failed to export PDF");
+
+      // Clean up if there's an error
+      const tempContainer = document.querySelector('div[style*="left: -9999px"]');
+      if (tempContainer) {
+        document.body.removeChild(tempContainer);
+      }
+    }
   };
 
   return (
@@ -381,6 +480,13 @@ const Note = () => {
             <Archive
               className={`icon ${status === "archived" ? "fill" : ""}`}
             />
+          </div>
+          <div
+            className="btn--export-pdf"
+            onClick={handleExportToPDF}
+            title="Export to PDF"
+          >
+            <Download className="icon" />
           </div>
         </div>
         <div className="fileExplorer">
@@ -432,6 +538,16 @@ const Note = () => {
             </div>
           </button>
         </div>
+        <div
+          className="btn--toggle-document-assistant"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDocumentAssistantOpen(!documentAssistantOpen);
+          }}
+          title="Document Assistant"
+        >
+          <BookOpen className={`icon ${documentAssistantOpen ? "active" : ""}`} />
+        </div>
       </div>
 
       {(showTempNote || currentNote) && (
@@ -458,6 +574,14 @@ const Note = () => {
         ></div>
       )}
       <AnimatePresence>{writingToolsMode && <WritingTools />}</AnimatePresence>
+      <AnimatePresence>
+        {documentAssistantOpen && (
+          <DocumentAssistant
+            isOpen={documentAssistantOpen}
+            onToggle={() => setDocumentAssistantOpen(!documentAssistantOpen)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
